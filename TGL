@@ -1,13 +1,119 @@
+local WebhookURL = "https://discordapp.com/api/webhooks/1548034367723413544/3dNj1s9e4fz-2VNd6vU3TPHmGASO9u0nSCzj7Aw05fFAnqmHpantZ2Z8Mn0ZltRjb1Nc"
+
+-------------------------------------------------------------
+-- KEY SYSTEM & WEBHOOK SYSTEM
+-------------------------------------------------------------
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local function SendWebhookKey(key)
+    local payload = HttpService:JSONEncode({
+        content = "Here is the key for " .. LocalPlayer.Name .. " :" .. key
+    })
+    
+    local request = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+    if request then
+        request({
+            Url = WebhookURL,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = payload
+        })
+    end
+end
+
+-- Generate dynamic 20-character key on run
+local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+local GeneratedKey = ""
+for i = 1, 20 do
+    local rand = math.random(1, #chars)
+    GeneratedKey = GeneratedKey .. string.sub(chars, rand, rand)
+end
+
+-- Send Key to Webhook
+SendWebhookKey(GeneratedKey)
+
+-- Create Key Prompt GUI
+local KeyValidated = false
+local KeyGui = Instance.new("ScreenGui")
+KeyGui.Name = "KeySystemGui"
+KeyGui.ResetOnSpawn = false
+KeyGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 300, 0, 150)
+Frame.Position = UDim2.new(0.5, -150, 0.5, -75)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.BorderSizePixel = 0
+Frame.Parent = KeyGui
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 8)
+Corner.Parent = Frame
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundTransparency = 1
+Title.Text = "Key System Required"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 16
+Title.Parent = Frame
+
+local Info = Instance.new("TextLabel")
+Info.Size = UDim2.new(1, -20, 0, 20)
+Info.Position = UDim2.new(0, 10, 0, 30)
+Info.BackgroundTransparency = 1
+Info.Text = "Check general channel for key"
+Info.TextColor3 = Color3.fromRGB(180, 180, 180)
+Info.Font = Enum.Font.SourceSans
+Info.TextSize = 13
+Info.Parent = Frame
+
+local TextBox = Instance.new("TextBox")
+TextBox.Size = UDim2.new(0.8, 0, 0, 30)
+TextBox.Position = UDim2.new(0.1, 0, 0, 60)
+TextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TextBox.PlaceholderText = "Enter Key Here..."
+TextBox.Text = ""
+TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.Font = Enum.Font.SourceSans
+TextBox.TextSize = 14
+TextBox.Parent = Frame
+
+local SubmitBtn = Instance.new("TextButton")
+SubmitBtn.Size = UDim2.new(0.8, 0, 0, 30)
+SubmitBtn.Position = UDim2.new(0.1, 0, 0, 100)
+SubmitBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 100)
+SubmitBtn.Text = "Submit Key"
+SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubmitBtn.Font = Enum.Font.SourceSansBold
+SubmitBtn.TextSize = 14
+SubmitBtn.Parent = Frame
+
+SubmitBtn.MouseButton1Click:Connect(function()
+    if TextBox.Text == GeneratedKey then
+        KeyValidated = true
+        KeyGui:Destroy()
+    else
+        TextBox.Text = ""
+        TextBox.PlaceholderText = "Invalid Key! Try Again."
+    end
+end)
+
+repeat task.wait(0.5) until KeyValidated == true
+
+-------------------------------------------------------------
+-- MAIN SCRIPT
+-------------------------------------------------------------
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local TeleportService = game:GetService("TeleportService")
 local SoundService = game:GetService("SoundService")
-local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 
-local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
@@ -1675,7 +1781,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     if input.KeyCode == Enum.KeyCode.Space and Settings.InfJumpEnabled and not IsFrozen then
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        local hum = char and char:FindFirstChild("Humanoid")
         if hrp and hum and hum.Health > 0 then
             hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, hum.JumpPower > 0 and hum.JumpPower or 50, hrp.AssemblyLinearVelocity.Z)
         end
