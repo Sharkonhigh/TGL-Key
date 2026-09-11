@@ -217,7 +217,12 @@ local Settings = {
     AntiStompEnabled = false,
     CustomColor = Color3.fromRGB(255, 0, 0),
 
-    EmoteSpeed = 10
+    EmoteSpeed = 10,
+
+    DeviceSpooferEnabled = false,
+    SpoofedDevice = "PC",
+    
+    CustomCursorStyle = "None"
 }
 
 local TeleportBinds = {}
@@ -239,6 +244,46 @@ local OriginalColors = {}
 local OriginalClothing = {}
 local isRainbowActiveSnapshot = false
 local ToggleUpdateCallbacks = {}
+
+-------------------------------------------------------------
+-- DEVICE SPOOFER IMPLEMENTATION
+-------------------------------------------------------------
+local RawGetPlatform = UserInputService.GetPlatform
+local DeviceProfiles = {
+    ["Mobile"]  = {Platform = Enum.Platform.IOS, Touch = true, Gamepad = false, VR = false, Keyboard = false, Mouse = false},
+    ["Tablet"]  = {Platform = Enum.Platform.Android, Touch = true, Gamepad = false, VR = false, Keyboard = false, Mouse = false},
+    ["VR"]      = {Platform = Enum.Platform.Windows, Touch = false, Gamepad = true, VR = true, Keyboard = true, Mouse = true},
+    ["Console"] = {Platform = Enum.Platform.XBoxOne, Touch = false, Gamepad = true, VR = false, Keyboard = false, Mouse = false},
+    ["PC"]      = {Platform = Enum.Platform.Windows, Touch = false, Gamepad = false, VR = false, Keyboard = true, Mouse = true}
+}
+
+if hookmetamethod then
+    local oldIndex
+    oldIndex = hookmetamethod(game, "__index", function(self, key)
+        if not checkcaller() and Settings.DeviceSpooferEnabled then
+            local profile = DeviceProfiles[Settings.SpoofedDevice] or DeviceProfiles["PC"]
+            if self == UserInputService then
+                if key == "TouchEnabled" then return profile.Touch end
+                if key == "GamepadEnabled" then return profile.Gamepad end
+                if key == "VREnabled" then return profile.VR end
+                if key == "KeyboardEnabled" then return profile.Keyboard end
+                if key == "MouseEnabled" then return profile.Mouse end
+            end
+        end
+        return oldIndex(self, key)
+    end)
+end
+
+if hookfunction then
+    local oldGetPlatform
+    oldGetPlatform = hookfunction(UserInputService.GetPlatform, function(self, ...)
+        if not checkcaller() and Settings.DeviceSpooferEnabled then
+            local profile = DeviceProfiles[Settings.SpoofedDevice] or DeviceProfiles["PC"]
+            return profile.Platform
+        end
+        return oldGetPlatform(self, ...)
+    end)
+end
 
 -------------------------------------------------------------
 -- CONFIG SAVE/LOAD/DELETE SYSTEM
@@ -278,7 +323,10 @@ local function SaveConfig(configName)
         LockEnabled = Settings.LockEnabled,
         StrafeEnabled = Settings.StrafeEnabled,
         AntiStompEnabled = Settings.AntiStompEnabled,
-        EmoteSpeed = Settings.EmoteSpeed
+        EmoteSpeed = Settings.EmoteSpeed,
+        DeviceSpooferEnabled = Settings.DeviceSpooferEnabled,
+        SpoofedDevice = Settings.SpoofedDevice,
+        CustomCursorStyle = Settings.CustomCursorStyle
     }
     local success, encoded = pcall(function()
         return HttpService:JSONEncode(data)
@@ -338,6 +386,46 @@ if syn and syn.protect_gui then
 elseif gethui then
     ScreenGui.Parent = gethui()
 end
+
+-------------------------------------------------------------
+-- CUSTOM SPINNING CURSOR GUI COMPONENTS
+-------------------------------------------------------------
+local CursorGui = Instance.new("ScreenGui")
+CursorGui.Name = "GrimCursorGui"
+CursorGui.ResetOnSpawn = false
+CursorGui.DisplayOrder = 1000000
+CursorGui.Parent = PlayerGui
+
+local CustomCursorFrame = Instance.new("Frame")
+CustomCursorFrame.Name = "CustomCursorFrame"
+CustomCursorFrame.Size = UDim2.new(0, 32, 0, 32)
+CustomCursorFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+CustomCursorFrame.BackgroundTransparency = 1
+CustomCursorFrame.Visible = false
+CustomCursorFrame.ZIndex = 1000
+CustomCursorFrame.Parent = CursorGui
+
+local CustomCursorImg = Instance.new("ImageLabel")
+CustomCursorImg.Size = UDim2.new(1, 0, 1, 0)
+CustomCursorImg.BackgroundTransparency = 1
+CustomCursorImg.Image = "rbxassetid://6031097225" -- Crosshair/Cursor texture
+CustomCursorImg.ImageColor3 = Color3.fromRGB(255, 255, 255)
+CustomCursorImg.ZIndex = 1000
+CustomCursorImg.Parent = CustomCursorFrame
+
+local CustomCursorText = Instance.new("TextLabel")
+CustomCursorText.Name = "CustomCursorText"
+CustomCursorText.Size = UDim2.new(0, 150, 0, 16)
+CustomCursorText.Position = UDim2.new(0.5, -75, 1, 4)
+CustomCursorText.BackgroundTransparency = 1
+CustomCursorText.Text = "TheGrimLabubu.cc"
+CustomCursorText.Font = Enum.Font.SourceSansBold
+CustomCursorText.TextColor3 = Color3.fromRGB(255, 255, 255)
+CustomCursorText.TextSize = 12
+CustomCursorText.TextStrokeTransparency = 0.2
+CustomCursorText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+CustomCursorText.ZIndex = 1001
+CustomCursorText.Parent = CustomCursorFrame
 
 -------------------------------------------------------------
 -- BLUR EFFECT FOR MENU & 3D SPINNING TEXT
@@ -718,6 +806,96 @@ end
 -------------------------------------------------------------
 -- UI BUILDERS
 -------------------------------------------------------------
+local function CreateDropdown(pageName, name, options, defaultOption, callback)
+    local targetPage = Pages[pageName]
+    if not targetPage then return end
+
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(1, 0, 0, 32)
+    Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 34)
+    Frame.BorderSizePixel = 0
+    Frame.ClipsDescendants = true
+    Frame.ZIndex = 4
+    Frame.Parent = targetPage
+
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Frame
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.5, 0, 0, 32)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = name
+    Label.Font = Enum.Font.SourceSans
+    Label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.ZIndex = 5
+    Label.Parent = Frame
+
+    local DropButton = Instance.new("TextButton")
+    DropButton.Size = UDim2.new(0, 120, 0, 22)
+    DropButton.Position = UDim2.new(1, -130, 0, 5)
+    DropButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+    DropButton.Text = defaultOption or "Select..."
+    DropButton.Font = Enum.Font.SourceSansBold
+    DropButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DropButton.TextSize = 12
+    DropButton.ZIndex = 5
+    DropButton.Parent = Frame
+
+    local DropCorner = Instance.new("UICorner")
+    DropCorner.CornerRadius = UDim.new(0, 4)
+    DropCorner.Parent = DropButton
+
+    local DropContainer = Instance.new("Frame")
+    DropContainer.Size = UDim2.new(1, -20, 0, #options * 24)
+    DropContainer.Position = UDim2.new(0, 10, 0, 35)
+    DropContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+    DropContainer.BorderSizePixel = 0
+    DropContainer.ZIndex = 5
+    DropContainer.Parent = Frame
+
+    local ContainerCorner = Instance.new("UICorner")
+    ContainerCorner.CornerRadius = UDim.new(0, 4)
+    ContainerCorner.Parent = DropContainer
+
+    local ListLayout = Instance.new("UIListLayout")
+    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ListLayout.Padding = UDim.new(0, 2)
+    ListLayout.Parent = DropContainer
+
+    local isOpen = false
+    DropButton.MouseButton1Click:Connect(function()
+        isOpen = not isOpen
+        Frame.Size = isOpen and UDim2.new(1, 0, 0, 40 + (#options * 26)) or UDim2.new(1, 0, 0, 32)
+    end)
+
+    for _, opt in ipairs(options) do
+        local OptButton = Instance.new("TextButton")
+        OptButton.Size = UDim2.new(1, 0, 0, 22)
+        OptButton.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+        OptButton.Text = opt
+        OptButton.Font = Enum.Font.SourceSans
+        OptButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+        OptButton.TextSize = 12
+        OptButton.ZIndex = 6
+        OptButton.Parent = DropContainer
+
+        local OptCorner = Instance.new("UICorner")
+        OptCorner.CornerRadius = UDim.new(0, 3)
+        OptCorner.Parent = OptButton
+
+        OptButton.MouseButton1Click:Connect(function()
+            DropButton.Text = opt
+            isOpen = false
+            Frame.Size = UDim2.new(1, 0, 0, 32)
+            task.spawn(callback, opt)
+        end)
+    end
+end
+
 local function CreateButton(pageName, name, color, callback)
     local targetPage = Pages[pageName]
     if not targetPage then return end
@@ -1411,6 +1589,29 @@ end)
 
 
 -- CHARACTER TAB
+CreateToggle("Character", "Device Spoofer", "DeviceSpooferEnabled", Settings.DeviceSpooferEnabled, function(v)
+    Settings.DeviceSpooferEnabled = v
+    ShowNotification(v and ("Device Spoofer Active: " .. Settings.SpoofedDevice) or "Device Spoofer Disabled")
+end)
+
+CreateDropdown("Character", "Select Device", {"Mobile", "Tablet", "VR", "Console", "PC"}, Settings.SpoofedDevice, function(selected)
+    Settings.SpoofedDevice = selected
+    ShowNotification("Device set to: " .. selected)
+end)
+
+CreateDropdown("Character", "Custom Cursor", {"None", "Spinning"}, Settings.CustomCursorStyle, function(selected)
+    Settings.CustomCursorStyle = selected
+    if selected == "Spinning" then
+        UserInputService.MouseIconEnabled = false
+        CustomCursorFrame.Visible = true
+        ShowNotification("Custom Spinning Cursor Enabled")
+    else
+        UserInputService.MouseIconEnabled = true
+        CustomCursorFrame.Visible = false
+        ShowNotification("Custom Cursor Disabled")
+    end
+end)
+
 CreateColorPicker("Character", "Character Color Picker", Settings.CustomColor, function(c)
     local char = LocalPlayer.Character
     if char then
@@ -1849,6 +2050,7 @@ local angle = 0
 local pOrbitAngle = 0
 local rainbowHue = 0
 local textSpinAngle = 0
+local cursorSpinAngle = 0
 
 local function AttachHumanoidHooks(hum)
     if not hum then return end
@@ -1880,6 +2082,19 @@ RunService.RenderStepped:Connect(function(deltaTime)
     if MainFrame.Visible then
         textSpinAngle = (textSpinAngle + (45 * deltaTime)) % 360
         SpinningText3D.Rotation = textSpinAngle
+    end
+
+    -- Update Custom Cursor Position & Rotation
+    if Settings.CustomCursorStyle == "Spinning" then
+        UserInputService.MouseIconEnabled = false
+        CustomCursorFrame.Visible = true
+        local mousePos = UserInputService:GetMouseLocation()
+        CustomCursorFrame.Position = UDim2.new(0, mousePos.X, 0, mousePos.Y)
+        cursorSpinAngle = (cursorSpinAngle + (180 * deltaTime)) % 360
+        CustomCursorImg.Rotation = cursorSpinAngle
+    else
+        CustomCursorFrame.Visible = false
+        UserInputService.MouseIconEnabled = true
     end
 
     local char = LocalPlayer.Character
