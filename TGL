@@ -1,15 +1,16 @@
 local WebhookURL = "https://discordapp.com/api/webhooks/1548034367723413544/3dNj1s9e4fz-2VNd6vU3TPHmGASO9u0nSCzj7Aw05fFAnqmHpantZ2Z8Mn0ZltRjb1Nc"
 
 -------------------------------------------------------------
--- KEY SYSTEM & WEBHOOK SYSTEM
+-- 24-HOUR KEY SYSTEM & WEBHOOK LOGGING
 -------------------------------------------------------------
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
+-- Function to send webhook log
 local function SendWebhookKey(key)
     local payload = HttpService:JSONEncode({
-        content = "Here is the key for " .. LocalPlayer.Name .. " :" .. key
+        content = "🔑 **New 24-Hour Key Generated!**\n**User:** " .. LocalPlayer.Name .. " (" .. LocalPlayer.UserId .. ")\n**Key:** `" .. key .. "`"
     })
     
     local request = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
@@ -23,7 +24,7 @@ local function SendWebhookKey(key)
     end
 end
 
--- Generate dynamic 20-character key on run
+-- Generate dynamic 20-character key with a 24-hour expiration timestamp
 local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 local GeneratedKey = ""
 for i = 1, 20 do
@@ -31,78 +32,121 @@ for i = 1, 20 do
     GeneratedKey = GeneratedKey .. string.sub(chars, rand, rand)
 end
 
--- Send Key to Webhook
+local KeyCreationTime = os.time()
+local KEY_DURATION = 86400 -- 24 Hours in seconds
+
+-- Log Key to Discord
 SendWebhookKey(GeneratedKey)
 
--- Create Key Prompt GUI
+-- Create Launch Key System GUI
 local KeyValidated = false
 local KeyGui = Instance.new("ScreenGui")
-KeyGui.Name = "KeySystemGui"
+KeyGui.Name = "GrimKeySystemGui"
 KeyGui.ResetOnSpawn = false
+KeyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+KeyGui.DisplayOrder = 999999
 KeyGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
+local Overlay = Instance.new("Frame")
+Overlay.Size = UDim2.new(1, 0, 1, 0)
+Overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Overlay.BackgroundTransparency = 0.5
+Overlay.Parent = KeyGui
+
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 300, 0, 150)
-Frame.Position = UDim2.new(0.5, -150, 0.5, -75)
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.Size = UDim2.new(0, 320, 0, 180)
+Frame.Position = UDim2.new(0.5, -160, 0.5, -90)
+Frame.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
 Frame.BorderSizePixel = 0
-Frame.Parent = KeyGui
+Frame.Parent = Overlay
 
 local Corner = Instance.new("UICorner")
 Corner.CornerRadius = UDim.new(0, 8)
 Corner.Parent = Frame
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Position = UDim2.new(0, 0, 0, 5)
 Title.BackgroundTransparency = 1
-Title.Text = "Key System Required"
+Title.Text = "Key System"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 16
+Title.TextSize = 18
 Title.Parent = Frame
 
 local Info = Instance.new("TextLabel")
 Info.Size = UDim2.new(1, -20, 0, 20)
-Info.Position = UDim2.new(0, 10, 0, 30)
+Info.Position = UDim2.new(0, 10, 0, 35)
 Info.BackgroundTransparency = 1
-Info.Text = "Check general channel for key"
-Info.TextColor3 = Color3.fromRGB(180, 180, 180)
+Info.Text = "Keys are valid for 24 hours. Check Discord."
+Info.TextColor3 = Color3.fromRGB(160, 160, 160)
 Info.Font = Enum.Font.SourceSans
 Info.TextSize = 13
 Info.Parent = Frame
 
 local TextBox = Instance.new("TextBox")
-TextBox.Size = UDim2.new(0.8, 0, 0, 30)
-TextBox.Position = UDim2.new(0.1, 0, 0, 60)
-TextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TextBox.Size = UDim2.new(0.85, 0, 0, 32)
+TextBox.Position = UDim2.new(0.075, 0, 0, 68)
+TextBox.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 TextBox.PlaceholderText = "Enter Key Here..."
 TextBox.Text = ""
 TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-TextBox.Font = Enum.Font.SourceSans
+TextBox.Font = Enum.Font.SourceSansBold
 TextBox.TextSize = 14
 TextBox.Parent = Frame
 
-local SubmitBtn = Instance.new("TextButton")
-SubmitBtn.Size = UDim2.new(0.8, 0, 0, 30)
-SubmitBtn.Position = UDim2.new(0.1, 0, 0, 100)
-SubmitBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 100)
-SubmitBtn.Text = "Submit Key"
-SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-SubmitBtn.Font = Enum.Font.SourceSansBold
-SubmitBtn.TextSize = 14
-SubmitBtn.Parent = Frame
+local TextCorner = Instance.new("UICorner")
+TextCorner.CornerRadius = UDim.new(0, 6)
+TextCorner.Parent = TextBox
 
-SubmitBtn.MouseButton1Click:Connect(function()
+local ContinueBtn = Instance.new("TextButton")
+ContinueBtn.Size = UDim2.new(0.85, 0, 0, 34)
+ContinueBtn.Position = UDim2.new(0.075, 0, 0, 112)
+ContinueBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 100)
+ContinueBtn.Text = "Continue"
+ContinueBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ContinueBtn.Font = Enum.Font.SourceSansBold
+ContinueBtn.TextSize = 15
+ContinueBtn.Parent = Frame
+
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = UDim.new(0, 6)
+BtnCorner.Parent = ContinueBtn
+
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, 0, 0, 20)
+StatusLabel.Position = UDim2.new(0, 0, 0, 152)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = ""
+StatusLabel.Font = Enum.Font.SourceSansBold
+StatusLabel.TextSize = 13
+StatusLabel.Parent = Frame
+
+ContinueBtn.MouseButton1Click:Connect(function()
+    local currentTime = os.time()
+    
+    if currentTime - KeyCreationTime > KEY_DURATION then
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
+        StatusLabel.Text = "Key Expired! Re-run the script."
+        TextBox.Text = ""
+        return
+    end
+
     if TextBox.Text == GeneratedKey then
+        StatusLabel.TextColor3 = Color3.fromRGB(50, 220, 100)
+        StatusLabel.Text = "Welcome!"
+        task.wait(1)
         KeyValidated = true
         KeyGui:Destroy()
     else
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
+        StatusLabel.Text = "Invalid Key! Try again."
         TextBox.Text = ""
-        TextBox.PlaceholderText = "Invalid Key! Try Again."
     end
 end)
 
-repeat task.wait(0.5) until KeyValidated == true
+-- Block execution until valid key is entered
+repeat task.wait(0.1) until KeyValidated == true
 
 -------------------------------------------------------------
 -- MAIN SCRIPT
@@ -1312,15 +1356,12 @@ local function ExecuteBuyAction(itemName, partName, posVector, isWeapon)
 
     local savedCFrame = hrp.CFrame
 
-    -- Teleport to buy position
     hrp.CFrame = CFrame.new(posVector)
     task.wait(0.2)
 
-    -- Trigger ClickDetector
     TriggerPurchasePart(partName)
     task.wait(0.3)
 
-    -- Teleport back to origin
     if hrp then
         hrp.CFrame = savedCFrame
     end
@@ -1336,7 +1377,6 @@ local function ExecuteBuyAction(itemName, partName, posVector, isWeapon)
     end
 end
 
--- Autobuy Items
 CreateButton("Autobuy", "Autobuy LMG", Color3.fromRGB(50, 180, 100), function()
     ExecuteBuyAction("LMG", "[LMG] - $4221", Vector3.new(-621, 23, -303), true)
 end)
@@ -1614,7 +1654,6 @@ local function ExecuteFling(targetPlayer)
             bV:Destroy()
             bAV:Destroy()
             
-            -- Teleport back safely to origin
             myHrp.AssemblyLinearVelocity = Vector3.zero
             myHrp.AssemblyAngularVelocity = Vector3.zero
             myHrp.CFrame = savedPos
@@ -1622,7 +1661,6 @@ local function ExecuteFling(targetPlayer)
             return
         end
 
-        -- Anti-Void Floor Check during fling execution
         if myHrp.Position.Y < -100 then
             myHrp.CFrame = savedPos + Vector3.new(0, 5, 0)
             myHrp.AssemblyLinearVelocity = Vector3.zero
@@ -1650,9 +1688,8 @@ CreateToggle("Players", "Auto Fling (On Spawn)", "AutoFlingEnabled", false, func
                     local hum = selectedTargetPlayer.Character:FindFirstChildOfClass("Humanoid")
                     if hum and hum.Health > 0 then
                         ExecuteFling(selectedTargetPlayer)
-                        -- Wait until target dies before re-flinging
                         repeat task.wait(0.5) until not selectedTargetPlayer or not selectedTargetPlayer.Character or not selectedTargetPlayer.Character:FindFirstChildOfClass("Humanoid") or selectedTargetPlayer.Character:FindFirstChildOfClass("Humanoid").Health <= 0 or not isAutoFlingEnabled
-                        task.wait(2) -- Pause for respawn
+                        task.wait(2)
                     end
                 end
                 task.wait(1)
@@ -1837,7 +1874,6 @@ LocalPlayer.CharacterAdded:Connect(function(newChar)
 end)
 
 RunService.RenderStepped:Connect(function(deltaTime)
-    -- GUI BLUR & 3D SPINNING TEXT VISIBILITY
     MenuBlur.Enabled = MainFrame.Visible
     SpinningText3D.Visible = MainFrame.Visible
 
@@ -1853,7 +1889,6 @@ RunService.RenderStepped:Connect(function(deltaTime)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hrp or not hum then return end
 
-    -- ANTISTOMP SYSTEM
     if Settings.AntiStompEnabled and hum.Health > 0 and hum.Health <= 3 then
         hum.Health = 0
         char:BreakJoints()
@@ -1951,7 +1986,6 @@ RunService.RenderStepped:Connect(function(deltaTime)
         hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(Settings.SpinSpeed), 0)
     end
 
-    -- HEAD AIMBOT (CFrame Snap Lock)
     if Settings.LockEnabled and Settings.IsLocked then
         if not Settings.CurrentTarget or not Settings.CurrentTarget.Character or not Settings.CurrentTarget.Character:FindFirstChildOfClass("Humanoid") or Settings.CurrentTarget.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then
             Settings.CurrentTarget = GetClosestPlayerToMouse()
