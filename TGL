@@ -800,7 +800,7 @@ for _, b in ipairs(TabBar:GetChildren()) do
 end
 
 -------------------------------------------------------------
--- UI BUILDERS (WITH VISIBLE ACTIVATION BUTTONS)
+-- UI BUILDERS (UPDATED: TOGGLE BUTTONS DISPLAY ON / OFF)
 -------------------------------------------------------------
 local function CreateButton(pageName, name, color, callback)
     local targetPage = Pages[pageName]
@@ -1136,7 +1136,7 @@ local function CreateTeleportButton(pageName, name, targetPosition)
     end)
 end
 
--- Create Toggle with explicit Activate / Deactivate button UI
+-- Create Toggle displaying "On" and "Off" states
 local function CreateToggle(pageName, name, settingKey, default, callback)
     local targetPage = Pages[pageName]
     if not targetPage then return end
@@ -1164,10 +1164,10 @@ local function CreateToggle(pageName, name, settingKey, default, callback)
     Label.Parent = Frame
 
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0, 95, 0, 24)
-    Button.Position = UDim2.new(1, -105, 0.5, -12)
+    Button.Size = UDim2.new(0, 75, 0, 24)
+    Button.Position = UDim2.new(1, -85, 0.5, -12)
     Button.BackgroundColor3 = default and Color3.fromRGB(50, 180, 100) or Color3.fromRGB(60, 60, 65)
-    Button.Text = default and "Activated" or "Activate"
+    Button.Text = default and "On" or "Off"
     Button.Font = Enum.Font.SourceSansBold
     Button.TextColor3 = Color3.fromRGB(255, 255, 255)
     Button.TextSize = 12
@@ -1183,7 +1183,7 @@ local function CreateToggle(pageName, name, settingKey, default, callback)
     local state = default
     local function updateVisual(newState)
         state = newState
-        Button.Text = state and "Activated" or "Activate"
+        Button.Text = state and "On" or "Off"
         Button.BackgroundColor3 = state and Color3.fromRGB(50, 180, 100) or Color3.fromRGB(60, 60, 65)
     end
 
@@ -1401,7 +1401,7 @@ Players.PlayerAdded:Connect(SetupChatListener)
 CreateToggle("Main", "AntiStomp (Auto-Reset @ 3HP)", "AntiStompEnabled", Settings.AntiStompEnabled, function(v) Settings.AntiStompEnabled = v end)
 CreateToggle("Main", "Infinite Jump", "InfJumpEnabled", Settings.InfJumpEnabled, function(v) Settings.InfJumpEnabled = v end)
 
--- DEVICE SPOOFER MOVED TO MAIN TAB
+-- DEVICE SPOOFER IN MAIN TAB
 CreateToggle("Main", "Device Spoofer", "SpooferEnabled", Settings.SpooferEnabled, function(v)
     Settings.SpooferEnabled = v
     ShowNotification(v and ("Spoofing device to: " .. Settings.SelectedDevice) or "Device Spoofer Disabled")
@@ -2261,7 +2261,7 @@ RunService.RenderStepped:Connect(function(deltaTime)
 
     if isPlayerOrbiting and selectedTargetPlayer and selectedTargetPlayer.Character then
         local tHead = selectedTargetPlayer.Character:FindFirstChild("Head")
-        if tHead then
+        if tHead me then
             pOrbitAngle = (pOrbitAngle + (5 * deltaTime)) % (math.pi * 2)
             local offset = Vector3.new(math.cos(pOrbitAngle) * 6, 0, math.sin(pOrbitAngle) * 6)
             hrp.CFrame = CFrame.new(tHead.Position + offset, tHead.Position)
