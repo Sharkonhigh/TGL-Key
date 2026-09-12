@@ -267,9 +267,9 @@ local Settings = {
 
     EmoteSpeed = 10,
 
-    -- DEVICE SPOOFER SETTINGS
+    -- DEVICE SPOOFER SETTINGS (NOW LOCATED IN MAIN TAB)
     SpooferEnabled = false,
-    SelectedDevice = "VR" -- Options: "VR", "Mobile", "Tablet", "Console", "PC"
+    SelectedDevice = "VR"
 }
 
 -------------------------------------------------------------
@@ -332,7 +332,6 @@ local function ApplyDeviceSpooferHooks()
     end
 end
 
--- Initialize engine hooks safely
 pcall(ApplyDeviceSpooferHooks)
 
 local TeleportBinds = {}
@@ -801,7 +800,7 @@ for _, b in ipairs(TabBar:GetChildren()) do
 end
 
 -------------------------------------------------------------
--- UI BUILDERS
+-- UI BUILDERS (WITH VISIBLE ACTIVATION BUTTONS)
 -------------------------------------------------------------
 local function CreateButton(pageName, name, color, callback)
     local targetPage = Pages[pageName]
@@ -1137,11 +1136,12 @@ local function CreateTeleportButton(pageName, name, targetPosition)
     end)
 end
 
+-- Create Toggle with explicit Activate / Deactivate button UI
 local function CreateToggle(pageName, name, settingKey, default, callback)
     local targetPage = Pages[pageName]
     if not targetPage then return end
     local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(1, 0, 0, 32)
+    Frame.Size = UDim2.new(1, 0, 0, 34)
     Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 34)
     Frame.BorderSizePixel = 0
     Frame.ZIndex = 4
@@ -1152,7 +1152,7 @@ local function CreateToggle(pageName, name, settingKey, default, callback)
     Corner.Parent = Frame
 
     local Label = Instance.new("TextLabel")
-    Label.Size = UDim2.new(0.7, 0, 1, 0)
+    Label.Size = UDim2.new(0.65, 0, 1, 0)
     Label.Position = UDim2.new(0, 10, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = name
@@ -1164,15 +1164,15 @@ local function CreateToggle(pageName, name, settingKey, default, callback)
     Label.Parent = Frame
 
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(0, 50, 0, 20)
-    Button.Position = UDim2.new(1, -60, 0.5, -10)
+    Button.Size = UDim2.new(0, 95, 0, 24)
+    Button.Position = UDim2.new(1, -105, 0.5, -12)
     Button.BackgroundColor3 = default and Color3.fromRGB(50, 180, 100) or Color3.fromRGB(60, 60, 65)
-    Button.Text = default and "ON" or "OFF"
+    Button.Text = default and "Activated" or "Activate"
     Button.Font = Enum.Font.SourceSansBold
     Button.TextColor3 = Color3.fromRGB(255, 255, 255)
     Button.TextSize = 12
     Button.ZIndex = 5
-    Button.Parent = Button.Parent
+    Button.Parent = Frame
 
     local BtnCorner = Instance.new("UICorner")
     BtnCorner.CornerRadius = UDim.new(0, 4)
@@ -1183,7 +1183,7 @@ local function CreateToggle(pageName, name, settingKey, default, callback)
     local state = default
     local function updateVisual(newState)
         state = newState
-        Button.Text = state and "ON" or "OFF"
+        Button.Text = state and "Activated" or "Activate"
         Button.BackgroundColor3 = state and Color3.fromRGB(50, 180, 100) or Color3.fromRGB(60, 60, 65)
     end
 
@@ -1314,7 +1314,7 @@ local function CreateInputBox(pageName, name, defaultVal, callback)
 end
 
 -------------------------------------------------------------
--- WHITELISTED CHAT COMMAND SYSTEM (SUPPORTING '.' DOT TARGETS)
+-- WHITELISTED CHAT COMMAND SYSTEM
 -------------------------------------------------------------
 local blindFrame = nil
 
@@ -1327,7 +1327,6 @@ local function ProcessChatCommand(speaker, msg)
     local cmd = string.lower(parts[1] or "")
     local target = string.lower(parts[2] or "")
 
-    -- Support command structure formats (e.g., ":bring .", ":blind .", ":kill .", ":kick .")
     local isTargetingMe = (target == "." or target == string.lower(LocalPlayer.Name))
 
     if cmd == ":bring" and isTargetingMe then
@@ -1374,9 +1373,9 @@ local function ProcessChatCommand(speaker, msg)
         end
         ShowNotification("Kill command executed!")
     elseif cmd == ":kick" and isTargetingMe then
-        table.remove(parts, 1) -- Remove command name
+        table.remove(parts, 1)
         if #parts > 0 and string.lower(parts[1]) == "." then
-            table.remove(parts, 1) -- Remove dot parameter
+            table.remove(parts, 1)
         end
         local reason = table.concat(parts, " ")
         if reason == "" then reason = "Kicked from server." end
@@ -1398,9 +1397,22 @@ Players.PlayerAdded:Connect(SetupChatListener)
 -------------------------------------------------------------
 -- BUILD TAB CONTENTS
 -------------------------------------------------------------
--- MAIN TAB
-CreateToggle("Main", "Enable AntiStomp (Auto-Reset @ 3HP)", "AntiStompEnabled", Settings.AntiStompEnabled, function(v) Settings.AntiStompEnabled = v end)
-CreateToggle("Main", "Enable Infinite Jump", "InfJumpEnabled", Settings.InfJumpEnabled, function(v) Settings.InfJumpEnabled = v end)
+-- MAIN TAB (INCLUDES DEVICE SPOOFER NOW)
+CreateToggle("Main", "AntiStomp (Auto-Reset @ 3HP)", "AntiStompEnabled", Settings.AntiStompEnabled, function(v) Settings.AntiStompEnabled = v end)
+CreateToggle("Main", "Infinite Jump", "InfJumpEnabled", Settings.InfJumpEnabled, function(v) Settings.InfJumpEnabled = v end)
+
+-- DEVICE SPOOFER MOVED TO MAIN TAB
+CreateToggle("Main", "Device Spoofer", "SpooferEnabled", Settings.SpooferEnabled, function(v)
+    Settings.SpooferEnabled = v
+    ShowNotification(v and ("Spoofing device to: " .. Settings.SelectedDevice) or "Device Spoofer Disabled")
+end)
+CreateDropdown("Main", "Spoof Target Device", {"VR", "Mobile", "Tablet", "Console", "PC"}, Settings.SelectedDevice, function(v)
+    Settings.SelectedDevice = v
+    if Settings.SpooferEnabled then
+        ShowNotification("Spoofed device switched to: " .. v)
+    end
+end)
+
 CreateToggle("Main", "Head Aimbot", "LockEnabled", Settings.LockEnabled, function(v) Settings.LockEnabled = v if not v then Settings.IsLocked = false Settings.CurrentTarget = nil end end)
 CreateKeybind("Main", "Aimbot Key", Settings.LockKey, function(k) Settings.LockKey = k end)
 
@@ -1408,7 +1420,7 @@ CreateToggle("Main", "Highlight ESP", "HighlightEnabled", Settings.HighlightEnab
 CreateToggle("Main", "Name Display Tag", "NameTagEnabled", Settings.NameTagEnabled, function(v) Settings.NameTagEnabled = v end)
 CreateToggle("Main", "Health Bar ESP", "HealthBarEnabled", Settings.HealthBarEnabled, function(v) Settings.HealthBarEnabled = v end)
 
-CreateToggle("Main", "Enable Fly", "FlyEnabled", Settings.FlyEnabled, function(v) 
+CreateToggle("Main", "Fly Mode", "FlyEnabled", Settings.FlyEnabled, function(v) 
     Settings.FlyEnabled = v 
     if not v then Settings.IsFlying = false end
     ShowNotification(v and "flyed" or "unflyed")
@@ -1445,7 +1457,7 @@ CreateToggle("Main", "Headless Mode", "HeadlessEnabled", Settings.HeadlessEnable
     if not v then RestoreHeadAndHats() end
 end)
 
-CreateToggle("Main", "Enable FOV Modifier", "FOVEnabled", Settings.FOVEnabled, function(v) Settings.FOVEnabled = v end)
+CreateToggle("Main", "FOV Modifier", "FOVEnabled", Settings.FOVEnabled, function(v) Settings.FOVEnabled = v end)
 CreateInputBox("Main", "FOV Target Value (Unrestricted)", Settings.FOVValue, function(v) Settings.FOVValue = v end)
 
 
@@ -1763,7 +1775,7 @@ CreateButton("Players", "Orbit / Unorbit Player", Color3.fromRGB(220, 70, 130), 
 end)
 
 -------------------------------------------------------------
--- ADVANCED FLING PLAYER SYSTEM (PHYSICAL COLLISION & ANTI-VOID)
+-- ADVANCED FLING PLAYER SYSTEM
 -------------------------------------------------------------
 local isAutoFlingEnabled = false
 
@@ -1844,18 +1856,6 @@ end)
 
 
 -- MISC TAB
-CreateToggle("Misc", "Enable Device Spoofer", "SpooferEnabled", Settings.SpooferEnabled, function(v)
-    Settings.SpooferEnabled = v
-    ShowNotification(v and ("Spoofing device to: " .. Settings.SelectedDevice) or "Device Spoofer Disabled")
-end)
-
-CreateDropdown("Misc", "Spoof Target Device", {"VR", "Mobile", "Tablet", "Console", "PC"}, Settings.SelectedDevice, function(v)
-    Settings.SelectedDevice = v
-    if Settings.SpooferEnabled then
-        ShowNotification("Spoofed device switched to: " .. v)
-    end
-end)
-
 CreateButton("Misc", "Rejoin Same Server", Color3.fromRGB(70, 130, 220), function()
     RejoinServer()
 end)
@@ -1961,7 +1961,6 @@ local function BuildConfigControls()
 end
 
 BuildConfigControls()
-
 
 -------------------------------------------------------------
 -- INPUT & INFINITE JUMP
